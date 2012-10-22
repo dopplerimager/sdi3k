@@ -11,7 +11,7 @@ function msis, year = year, $
 			   latitude = latitude, $
 			   longitude = longitude, $
 			   f107 = f107, $
-			   f107a = f107a, $
+			   avef107 = f107a, $
 			   ap = ap
 
 	;function msis, doy, sec, alt, lat, lon, f107a, f107, ap, ap_array = ap_array
@@ -125,10 +125,11 @@ function msis, year = year, $
 
 	dens = dblarr(9)
 	temp = dblarr(2)
+	whoami, dir, file
 	for j = 0, nt - 1 do begin
 
 		lst = double(ut_secs[j]/3600. + longitude[j]/15.)
-		result = call_external('C:\rsi\idlsource\models\msis2000\msise2000.dll','nrlmsise00', $
+		result = call_external(dir + '\msis2000\msise2000.dll','nrlmsise00', $
                         year[j], $
                         doy[j], $
                         ut_secs[j], $

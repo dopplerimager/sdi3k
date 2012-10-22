@@ -33,7 +33,7 @@ function hwm, year = year, $
 			else yyddd[i] = 1000L*(year[i] - 1900) + doy[i]
 	endfor
 
-	ut_secs = float(us_secs)
+	ut_secs = float(ut_secs)
 	altitude = float(altitude)
 	latitude = float(latitude)
 	longitude = float(longitude)
@@ -44,10 +44,11 @@ function hwm, year = year, $
 	zonal = fltarr(nt)
 	w = fltarr(2)
 
-	cd, 'C:\RSI\IDLSource\Code\HWM\Win32HWM07+\', curr=olddir
+	whoami, dir, file
+	cd, dir + '\HWM07\', curr=olddir
 	for j = 0, nt - 1  do begin
 
-		result = call_external('C:\RSI\IDLSource\Models\HWM07\hwm07+.dll','hwm07', $
+		result = call_external(dir + '\HWM07\hwm07+.dll','hwm07', $
 								yyddd[j], $
 								ut_secs[j], $
 								altitude[j], $

@@ -22,7 +22,8 @@ end
 pro sdi3k_tseries_plotter, tlist, tcen, mm, resin, tsplot_settings, culz, $
                            sigma_name=signame, units_name=unitname, $
                            colors=colors, quality_filter=quality_filter, $
-                           pastel=pastel, epoints=epoints, notitle=notitle
+                           pastel=pastel, epoints=epoints, notitle=notitle, $
+                           msis2000=msis2000
 
     resarr = resin
 
@@ -159,70 +160,89 @@ pro sdi3k_tseries_plotter, tlist, tcen, mm, resin, tsplot_settings, culz, $
     endelse
 
     if strupcase(tsplot_settings.parameter) eq 'TEMPERATURE' and tsplot_settings.msis.plot_msis and item eq n_elements(zspec)-1 then begin
-       msis_dll  = 'c:\Documents and Settings\mark_con\My Documents\IDL\msis\Idlmsis.dll'
-       if not(file_test(msis_dll)) then msis_dll = 'c:\users\conde\main\idl\msis\idlmsis.dll'
-       if not(file_test(msis_dll)) then msis_dll = 'd:\users\conde\main\idl\msis\idlmsis.dll'
-       nmsis     = 16L*(max(timlimz) - min(timlimz))/86400L + 8
-       msis_vals = fltarr(nmsis)
-       tmx       = findgen(nmsis)*deltime/(nmsis-1) + timlimz(0)
-       sec   = 0.
-       lat   = mm.latitude
-       lon   = mm.longitude
-       if lon lt 0 then lon = lon+360.
-       f107  = float(tsplot_settings.msis.f10pt7)
-       alt   = float(tsplot_settings.msis.msis_height)
-       f107a = f107
-       ap    = fltarr(7)
-       mass  = 48L
-       t     = fltarr(2)
-       d     = fltarr(8)
-       delz  = 20.
-       if alt lt 180. then delz = 10.
-;       if alt lt 130. then delz = 5.
 
-       for idz=-8,8  do begin
-         for j=0,n_elements(msis_vals)-1 do begin
-             yyddd  = long(dt_tm_mk(js2jd(0d)+1, tmx(j), format='doy$'))
-;             yyddd  = dt_tm_mk(js2jd(0d)+1, tt(j), format='1991doy$')
-             js2ymds, tmx(j), yy, mmm, dd, ss
-             ss     = float(ss)
-             lst    = ss/3600. + lon/15.
-             if lst lt 0  then lst = lst + 24.
-             if lst gt 24 then lst = lst - 24.
-             ap(0)  = tsplot_settings.msis.ap
-;             help, ss
-;             print, yyddd, ss, lat, lon, lst, f107a, f107, ap, mass
-                 zv = alt + idz*delz
-             result = call_external(msis_dll,'msis90', $
-                                     yyddd, ss, zv, lat, lon, lst, f107a, f107, ap, mass, d, t)
-             msis_vals(j) = t(1)
-;             print, t(1)
-             wait, 0.002
-         endfor
-         if zv ge 100. and zv le 260. and min(msis_vals) gt parlimz(0) and max(msis_vals) lt parlimz(1) then begin
-            thk = (tsplot_settings.style.line_thickness-2) > 1
-            if idz eq 0 then begin
-               thk = thk + 2
-;                  oplot,  tmx, msis_vals, thick=3, linestyle=1, color=host.colors.rose
-            endif
+		if not keyword_set(msis2000) then begin
+       		msis_dll  = 'c:\Documents and Settings\mark_con\My Documents\IDL\msis\Idlmsis.dll'
+       		if not(file_test(msis_dll)) then msis_dll = 'c:\users\conde\main\idl\msis\idlmsis.dll'
+       		if not(file_test(msis_dll)) then msis_dll = 'd:\users\conde\main\idl\msis\idlmsis.dll'
+       	endif
 
-            mthk     = 1
-            dfrc     = 0.8
+	    nmsis     = 16L*(max(timlimz) - min(timlimz))/86400L + 8
+	    msis_vals = fltarr(nmsis)
+	    tmx       = findgen(nmsis)*deltime/(nmsis-1) + timlimz(0)
+	    sec   = 0.
+	    lat   = mm.latitude
+	    lon   = mm.longitude
+	    if lon lt 0 then lon = lon+360.
+	    f107  = float(tsplot_settings.msis.f10pt7)
+	    alt   = float(tsplot_settings.msis.msis_height)
+	    f107a = f107
+	    ap    = fltarr(7)
+	    mass  = 48L
+	    t     = fltarr(2)
+	    d     = fltarr(8)
+	    delz  = 20.
+	    if alt lt 180. then delz = 10.
+		;if alt lt 130. then delz = 5.
 
+       	for idz=-8,8  do begin
+        	for j=0,n_elements(msis_vals)-1 do begin
 
-            oplot,  tmx, msis_vals, thick=thk, linestyle=1, color=culz.red
-            aplab    = strcompress(string(tsplot_settings.msis.ap,     format='(i8)'), /remove_all)
-            f107lab  = strcompress(string(tsplot_settings.msis.f10pt7, format='(i8)'), /remove_all)
-            zlab     = strcompress(string(tsplot_settings.msis.msis_height, format='(i8)'), /remove_all)
-            hlab     = strcompress(string(zv, format='(i8)'), /remove_all)
-            msis_lab = 'MSIS-90 model!C' + 'Ap=' + aplab + ', F10.7=' + f107lab
-            tm       = timlimz(0) + 0.97*deltime
-            ym       = parlimz(0) - 0.12*dfrc^2*(parlimz(1) - parlimz(0))
-            t1       = timlimz(1) - 0.03*deltime
-            y1       = msis_vals(n_elements(msis_vals)-1) - (parlimz(1) -parlimz(0))*0.030*dfrc
-            xyouts, tm, ym, msis_lab, charsize=1.2, color=culz.red, align=1, charthick=mthk
-            xyouts, t1, y1, hlab +' km', charsize=((tsplot_settings.style.charsize - 4) > 1.2), color=culz.red, align=1, charthick=(tsplot_settings.style.charthick-1)>1
-         endif
+	            yyddd  = long(dt_tm_mk(js2jd(0d)+1, tmx(j), format='doy$'))
+	            js2ymds, tmx(j), yy, mmm, dd, ss
+	            ss     = float(ss)
+	            lst    = ss/3600. + lon/15.
+	            if lst lt 0  then lst = lst + 24.
+	            if lst gt 24 then lst = lst - 24.
+	            ap(0)  = tsplot_settings.msis.ap
+
+	            zv = alt + idz*delz
+
+				if not keyword_set(msis2000) then begin
+	            	result = call_external(msis_dll,'msis90', $
+	                	                   yyddd, ss, zv, lat, lon, lst, f107a, f107, ap, mass, d, t)
+	            	msis_vals(j) = t(1)
+	           	endif else begin
+
+					doy = ymd2dn(yy, mmm, dd)
+					result = msis( year = yy, $
+								   doy = doy, $
+								   ut_secs = ss, $
+								   altitude = zv, $
+								   latitude = lat, $
+								   longitude = lon, $
+								   f107 = f107, $
+								   avef107 = f107a, $
+								   ap = ap )
+
+					msis_vals[j] = result.temp
+				endelse
+
+	            wait, 0.002
+         	endfor
+	        if zv ge 100. and zv le 260. and min(msis_vals) gt parlimz(0) and max(msis_vals) lt parlimz(1) then begin
+	        	thk = (tsplot_settings.style.line_thickness-2) > 1
+	           	if idz eq 0 then begin
+	           		thk = thk + 2
+					;oplot,  tmx, msis_vals, thick=3, linestyle=1, color=host.colors.rose
+	            endif
+
+	            mthk     = 1
+	            dfrc     = 0.8
+
+	            oplot,  tmx, msis_vals, thick=thk, linestyle=1, color=culz.red
+	            aplab    = strcompress(string(tsplot_settings.msis.ap,     format='(i8)'), /remove_all)
+	            f107lab  = strcompress(string(tsplot_settings.msis.f10pt7, format='(i8)'), /remove_all)
+	            zlab     = strcompress(string(tsplot_settings.msis.msis_height, format='(i8)'), /remove_all)
+	            hlab     = strcompress(string(zv, format='(i8)'), /remove_all)
+	            msis_lab = 'MSIS-90 model!C' + 'Ap=' + aplab + ', F10.7=' + f107lab
+	            tm       = timlimz(0) + 0.97*deltime
+	            ym       = parlimz(0) - 0.12*dfrc^2*(parlimz(1) - parlimz(0))
+	            t1       = timlimz(1) - 0.03*deltime
+	            y1       = msis_vals(n_elements(msis_vals)-1) - (parlimz(1) -parlimz(0))*0.030*dfrc
+	            xyouts, tm, ym, msis_lab, charsize=1.2, color=culz.red, align=1, charthick=mthk
+	            xyouts, t1, y1, hlab +' km', charsize=((tsplot_settings.style.charsize - 4) > 1.2), color=culz.red, align=1, charthick=(tsplot_settings.style.charthick-1)>1
+	         endif
         endfor
 
     if zspec(item) ne 'All' then begin

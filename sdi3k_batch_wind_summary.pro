@@ -1,4 +1,10 @@
-pro sdi3k_batch_wind_summary, ncfile, culz, wscale, hwm, box=box, drift_mode=drift_mode
+pro sdi3k_batch_wind_summary, ncfile, $
+							  culz, $
+							  wscale, $
+							  hwm, $
+							  box=box, $
+							  drift_mode=drift_mode, $
+							  hwm07=hwm07
 
 if not(keyword_set(box)) then box = [1800, 1200]
 if not(keyword_set(drift_mode)) then drift_mode = 'data'
@@ -36,8 +42,11 @@ vscale = [-167, 167]
      endif
 
 ;---Setup the HWM stuff:
-    hwm_dll  = 'd:\users\conde\main\idl\hwm\nrlhwm93.dll'
-    if not(file_test(hwm_dll)) then hwm_dll = 'c:\users\conde\main\idl\hwm\nrlhwm93.dll'
+	if not keyword_set(hwm07) then begin
+    	hwm_dll  = 'd:\users\conde\main\idl\hwm\nrlhwm93.dll'
+    	if not(file_test(hwm_dll)) then hwm_dll = 'c:\users\conde\main\idl\hwm\nrlhwm93.dll'
+    endif
+
     nhwm     = 32
     hwm_vals = fltarr(2, 3, nhwm)
     tmx       = findgen(nhwm)*deltime/(nhwm-1) + timlimz(0)
@@ -68,7 +77,8 @@ vscale = [-167, 167]
 
     for idz=-1,1  do begin
         for j=0,nhwm-1 do begin
-            yyddd  = long(dt_tm_mk(js2jd(0d)+1, tmx(j), format='y$doy$'))
+
+        	yyddd  = long(dt_tm_mk(js2jd(0d)+1, tmx(j), format='y$doy$'))
             js2ymds, tmx(j), yy, mmm, dd, ss
             ss     = float(ss)
             lst    = ss/3600. + lon/15.
@@ -76,13 +86,30 @@ vscale = [-167, 167]
             if lst gt 24 then lst = lst - 24.
             zv     = alt + idz*delz
             w      = fltarr(2)
-            result = call_external(hwm_dll,'nrlhwm93', yyddd, ss, zv, lat, lon, lst, f107a, f107, ap, flags,w)
-;            print, yyddd, ss, zv, lat, lon, lst, f107a, f107, ap, flags,w
-            hwm_vals(1, idz+1, j) = w(1)*cos(magrot) - w(0)*sin(magrot)
-            hwm_vals(0, idz+1, j) = w(0)*cos(magrot) + w(1)*sin(magrot)
-;            hwm_vals(0, idz+1, j) = w(0)
-;            hwm_vals(1, idz+1, j) = w(1)
+
+            if not keyword_set(hwm07) then begin
+            	result = call_external(hwm_dll,'nrlhwm93', yyddd, ss, zv, lat, lon, lst, f107a, f107, ap, flags,w)
+            	hwm_vals(1, idz+1, j) = w(1)*cos(magrot) - w(0)*sin(magrot)
+            	hwm_vals(0, idz+1, j) = w(0)*cos(magrot) + w(1)*sin(magrot)
+            endif else begin
+
+				doy = ymd2dn(yy, mmm, dd)
+				result = hwm( year = yy, $
+							  doy = doy, $
+							  ut_secs = ss, $
+							  altitude = zv, $
+							  latitude = lat, $
+							  longitude = lon, $
+							  f107 = f107, $
+							  ap = ap )
+
+				hwm_vals[1, idz+1, j] = result.zonal*cos(magrot) - result.merid*sin(magrot)
+            	hwm_vals[0, idz+1, j] = result.merid*cos(magrot) + result.zonal*sin(magrot)
+
+			endelse
+
             wait, 0.002
+
          endfor
      endfor
 
