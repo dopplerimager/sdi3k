@@ -1,3 +1,5 @@
+@sdi_tag
+
 pro sdi3k_auto_flat, mm, wind_offset, use_database = use_database
 
 	if keyword_set(use_database) then begin
