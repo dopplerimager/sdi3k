@@ -9,7 +9,15 @@ end
 
 ;=======================================================================================================
 
-pro sdi3k_batch_plotz, filename, xy_only=xy_only, stage=stage, skip_existing=skip_existing, plot_folder=plot_folder, timewin=timewin, drift_mode=drift_mode
+pro sdi3k_batch_plotz, filename, $
+					   xy_only=xy_only, $
+					   stage=stage, $
+					   skip_existing=skip_existing, $
+					   root_dir=root_dir, $
+					   plot_folder=plot_folder, $
+					   timewin=timewin, $
+					   drift_mode=drift_mode
+
 if not(keyword_set(drift_mode)) then drift_mode = 'data'
 data_based_drift = strupcase(drift_mode) eq 'DATA'
 
@@ -102,7 +110,9 @@ data_based_drift = strupcase(drift_mode) eq 'DATA'
 
 
 ;---Check if plots already exist for this netCDF file. If so, and we're not forcing an update, then return:
-    plot_dir = 'c:\inetpub\wwwroot\conde\sdiplots\'
+    if not keyword_set(root_dir) then plot_dir = 'c:\inetpub\wwwroot\conde\sdiplots\' $
+    	else plot_dir = root_dir
+
     plots_exist = -1
     sdi3k_batch_plotsave, plot_dir, mm, 'Wind_Dial_Plot', test_exist=plots_exist, plot_folder=plot_folder
     if plots_exist and skip_existing then return
