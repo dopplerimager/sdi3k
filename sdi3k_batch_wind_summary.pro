@@ -1,3 +1,5 @@
+@hwm
+
 pro sdi3k_batch_wind_summary, ncfile, $
 							  culz, $
 							  wscale, $
@@ -94,7 +96,8 @@ vscale = [-167, 167]
             endif else begin
 
 				doy = ymd2dn(yy, mmm, dd)
-				result = hwm( year = yy, $
+
+				result = hwm(year = yy, $
 							  doy = doy, $
 							  ut_secs = ss, $
 							  altitude = zv, $

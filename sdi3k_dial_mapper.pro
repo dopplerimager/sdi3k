@@ -79,7 +79,6 @@ pro sdi3k_dial_mapper, tlist, tcen, mm, windfit, cirplot_settings, culz, spekfit
        smax = max(images.scale(1) - images.scale(0))
     endif
 
-
     tvlct, r, g, b, /get
     for rec=(cirplot_settings.records(0) > 0), (cirplot_settings.records(1) < n_elements(windfit.vertical_wind)-1) do begin
         js2ymds, tcen(rec), yy, mmm, dd, ss
