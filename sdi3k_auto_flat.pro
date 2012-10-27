@@ -1,6 +1,9 @@
 @sdi_tag
 
-pro sdi3k_auto_flat, mm, wind_offset, use_database = use_database
+pro sdi3k_auto_flat, mm, wind_offset, $
+					 not_pedantic = not_pedantic, $
+					 use_database = use_database, $
+					 use_path = use_path
 
 	if keyword_set(use_database) then begin
 	;\\ ######## Version utilizing the all-in-one database ##########
@@ -41,7 +44,9 @@ pro sdi3k_auto_flat, mm, wind_offset, use_database = use_database
 
 		;----First check if there is a wind offset saved in the netCDF file. If so, use it:
 		;     sdi3k_read_netcdf_data, mm.file_name, wind_offset=wind_offset
-		     if n_elements(wind_offset) eq mm.nzones then return
+		     if n_elements(wind_offset) eq mm.nzones then begin
+		     	if (total(wind_offset) ne 0) then return
+		     endif
 		     wind_offset = fltarr(mm.nzones)
 
 		;---Determine the wavelength:
@@ -64,8 +69,13 @@ pro sdi3k_auto_flat, mm, wind_offset, use_database = use_database
 		       lamstring = '_red'
 		    endif
 
-		      local_path = file_expand_path(mm.path) + '\'
-		      flats    = findfile(local_path + "Wind_flat_field*" + lamda + "*.sav")
+			if keyword_set(use_path) then begin
+				local_path = use_path
+			endif else begin
+		      	local_path = file_expand_path(mm.path) + '\'
+		    endelse
+
+		    flats    = findfile(local_path + "Wind_flat_field*" + mm.site_code + "*" + lamda + "*.sav")
 
 			  if size(flats, /dimensions) eq 0 then return
 
@@ -103,10 +113,16 @@ pro sdi3k_auto_flat, mm, wind_offset, use_database = use_database
 			if size(flatarr, /type) eq 0 then return
 
 		;-----Only keep the flat field files flagged as being valid during the time of the current data:
-		      centime = (mm.start_time + mm.end_time)/2
-		      goods = where(centime gt (flatarr.js_valid(0)) and centime lt  (flatarr.js_valid(1)), ng)
-		      if ng le 0 then return  ; There were no valid files. Return an offset of zero.
-		      flatarr = flatarr(goods)
+		centime = (mm.start_time + mm.end_time)/2
+		goods = where(centime gt (flatarr.js_valid(0)) and centime lt  (flatarr.js_valid(1)), ng)
+		if ng le 0 then begin
+			if not keyword_set(not_pedantic) then return  ; There were no valid files. Return an offset of zero.
+
+			;\\ Else choose the closest in time
+			diff = abs(centime - flatarr.js_valid[1])
+			goods = where(diff eq min(diff))
+		endif
+		flatarr = flatarr(goods)
 
 		;-----Now determine a weighted score of merit for the remaing candidate flat field files:
 		      weight = exp(-((flatarr.js_average - centime)/(60D*86400D))^2) + 0.25*flatarr.stars.index

@@ -68,10 +68,12 @@ if mmsky.start_time eq mmsky.end_time then return
           wind_settings.space_smoothing = 0.08
        endif
 
+
     wind_offset = spekfits(0).velocity*0.
     if doing_green then sdi3k_get_wind_offset, getenv('SDI_GREEN_ZERO_VELOCITY_FILE'), wind_offset, mmsky
     if doing_red   then sdi3k_get_wind_offset, getenv('SDI_RED_ZERO_VELOCITY_FILE'),   wind_offset, mmsky
     if doing_oh    then sdi3k_get_wind_offset, getenv('SDI_OH_ZERO_VELOCITY_FILE'),    wind_offset, mmsky
+    print, 'WIND OFFSET: ', wind_offset
     snrarr = fltarr(n_elements(spekfits))
     chiarr = fltarr(n_elements(spekfits))
     for j=0,n_elements(spekfits) - 1 do begin
