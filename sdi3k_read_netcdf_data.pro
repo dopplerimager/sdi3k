@@ -997,14 +997,35 @@ pro sdi3k_read_netcdf_data, filename, $
       endfor
       spekfits.intensity = spekfits.intensity*maxpix
 
+;---Determine the wavelength:
+    doing_sodium = 0
+    doing_red    = 0
+    doing_green  = 0
+    doing_oh     = 0
+    scale        = 1000.
+    if abs(metadata.wavelength_nm - 589.0) lt 5. then begin
+       lamda = '5890'
+       doing_sodium = 1
+    endif
+    if abs(metadata.wavelength_nm - 557.7) lt 5. then begin
+       lamda = '5577'
+       doing_green = 1
+       scale = 500.
+    endif
+    if abs(metadata.wavelength_nm - 630.03) lt 5. then begin
+       lamda = '6300'
+       doing_red = 1
+    endif
+    if abs(metadata.wavelength_nm - 843.5) lt 5. then begin
+       lamda = '8435'
+       doing_oh = 1
+    endif
+
 ;-----Apply any zero-velocity offset correction maps that have been selected:
       wind_offset = spekfits(0).velocity*0.
-;      if doing_green then sdi3k_get_wind_offset, getenv('SDI_GREEN_ZERO_VELOCITY_FILE'), wind_offset, mm
-;      if doing_red   then sdi3k_get_wind_offset, getenv('SDI_RED_ZERO_VELOCITY_FILE'),   wind_offset, mm
-;      if doing_OH    then sdi3k_get_wind_offset, getenv('SDI_OH_ZERO_VELOCITY_FILE'),    wind_offset, mm
-;      for j=0,n_elements(spekfits) - 1 do begin
-;          spekfits(j).velocity = spekfits(j).velocity - wind_offset
-;      endfor
+      if doing_green then sdi3k_get_wind_offset, getenv('SDI_GREEN_ZERO_VELOCITY_FILE'), wind_offset, metadata
+      if doing_red   then sdi3k_get_wind_offset, getenv('SDI_RED_ZERO_VELOCITY_FILE'),   wind_offset, metadata
+      if doing_OH    then sdi3k_get_wind_offset, getenv('SDI_OH_ZERO_VELOCITY_FILE'),    wind_offset, metadata
 
 ;-----Create 1D arrays of chi-squared and snr, to be used in spotting bad exposures:
       snrarr = fltarr(n_elements(spekfits))

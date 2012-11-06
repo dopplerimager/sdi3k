@@ -1,8 +1,8 @@
 
 
-pro sdi3k_batch_plot_latest_spex, spekfile
+pro sdi3k_batch_plot_latest_spex, spekfile, plot_dir=plot_dir
 
-plot_dir = 'c:\inetpub\wwwroot\conde\sdiplots\'
+if not(keyword_set(plot_dir)) then plot_dir = 'c:\inetpub\wwwroot\conde\sdiplots\'
 
 sdi3k_read_netcdf_data,  spekfile, $
                          metadata=mm, zone_centers=zone_centers, zonemap=zonemap, zone_edges=zone_edges, $
@@ -36,44 +36,7 @@ zone_edges = where(zonemap ne shift(zonemap, 1,0) or zonemap ne shift(zonemap, 0
        lamda = '6300'
        doing_red = 1
     endif
-goto, skip_prepro
-;---Apply any zero-velocity offset correction maps that have been selected:
-    wind_offset = spekfits(0).velocity*0.
-    if doing_green then sdi3k_get_wind_offset, getenv('SDI_GREEN_ZERO_VELOCITY_FILE'), wind_offset, mm
-    if doing_red   then sdi3k_get_wind_offset, getenv('SDI_RED_ZERO_VELOCITY_FILE'),   wind_offset, mm
-    if doing_OH    then sdi3k_get_wind_offset, getenv('SDI_OH_ZERO_VELOCITY_FILE'),    wind_offset, mm
-    for j=0,n_elements(spekfits) - 1 do begin
-        spekfits(j).velocity = spekfits(j).velocity - wind_offset
-    endfor
 
-;---Create 1D arrays of chi-squared and snr, to be used in spotting bad exposures:
-    snrarr = fltarr(n_elements(spekfits))
-    chiarr = fltarr(n_elements(spekfits))
-    for j=0,n_elements(spekfits) - 1 do begin
-        spekfits(j).velocity = spekfits(j).velocity - wind_offset
-        chiarr(j) = mean(spekfits(j).chi_squared)
-        snrarr(j) = mean(spekfits(j).signal2noise)
-    endfor
-
-;---Replace any spectral fits with really high chi-squareds with nearest good record:
-    chilim = 1.9
-    if abs(mm.wavelength_nm - 557.7) lt 1. then chilim = 5.
-    goods = where(chiarr lt chilim and snrarr gt 70., ngg)
-    if ngg le 0 then return
-    bads  = where(chiarr ge chilim or  snrarr le 70., nn)
-    for j=0, nn-1 do begin
-        distz = abs(bads(j) - goods)
-        best  = where(distz eq min(distz))
-        best  = best(0)
-        spekfits(bads(j)) = spekfits(goods(best))
-    endfor
-
-
-    sdi3k_remove_radial_residual, mm, spekfits, parname='VELOCITY'
-
-    sdi3k_drift_correct, spekfits, mm, /force, /data_based ;########
-    spekfits.velocity = mm.channels_to_velocity*spekfits.velocity
-skip_prepro:
     tprarr = spekfits.temperature
     print, 'Time smoothing temperatures...'
     sdi3k_timesmooth_fits,  tprarr, 1.2, mm
@@ -229,6 +192,9 @@ skip_prepro:
        sname = 'Poker Flat!CAlaska'
        exptime = strcompress(string((spex(rec).end_time - spex(rec).start_time)/60., format='(f9.1)'), /remove_all)
        if strpos(strupcase(mm.site), 'MAWSON') ge 0 then sname = 'Mawson!CAntarctica'
+       if strpos(strupcase(mm.site), 'HAARP')  ge 0 then sname = 'HAARP!CAlaska'
+       if strpos(strupcase(mm.site), 'TOOLIK') ge 0 then sname = 'Toolik!CLake Alaska'
+       if strpos(strupcase(mm.site), 'KAKTOVIK') ge 0 then sname = 'Kaktovik!CAlaska'
        xyouts, /normal, .03, .96,  dt_tm_mk(js2jd(0d)+1, js, format='Y$-n$-0d$'), color=culz.white, charsize=2.5, charthick=3
        xyouts, /normal, .03, .925, dt_tm_mk(js2jd(0d)+1, js, format='h$:m$:s$'),  color=culz.white, charsize=2.5, charthick=3
        xyouts, /normal, .03, .890, exptime + ' min',                              color=culz.white, charsize=2.5, charthick=3
