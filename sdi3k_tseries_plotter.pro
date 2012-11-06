@@ -199,11 +199,12 @@ pro sdi3k_tseries_plotter, tlist, tcen, mm, resin, tsplot_settings, culz, $
 	            zv = alt + idz*delz
 
 				if not keyword_set(msis2000) then begin
+					msis_version = 'MSIS-90 model'
 	            	result = call_external(msis_dll,'msis90', $
 	                	                   yyddd, ss, zv, lat, lon, lst, f107a, f107, ap, mass, d, t)
 	            	msis_vals(j) = t(1)
 	           	endif else begin
-
+					msis_version = 'MSISe-00 model'
 					doy = ymd2dn(yy, mmm, dd)
 					result = msis( year = yy, $
 								   doy = doy, $
@@ -235,7 +236,7 @@ pro sdi3k_tseries_plotter, tlist, tcen, mm, resin, tsplot_settings, culz, $
 	            f107lab  = strcompress(string(tsplot_settings.msis.f10pt7, format='(i8)'), /remove_all)
 	            zlab     = strcompress(string(tsplot_settings.msis.msis_height, format='(i8)'), /remove_all)
 	            hlab     = strcompress(string(zv, format='(i8)'), /remove_all)
-	            msis_lab = 'MSIS-90 model!C' + 'Ap=' + aplab + ', F10.7=' + f107lab
+				msis_lab = msis_version + '!C' + 'Ap=' + aplab + ', F10.7=' + f107lab
 	            tm       = timlimz(0) + 0.97*deltime
 	            ym       = parlimz(0) - 0.12*dfrc^2*(parlimz(1) - parlimz(0))
 	            t1       = timlimz(1) - 0.03*deltime
