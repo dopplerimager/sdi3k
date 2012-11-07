@@ -75,7 +75,7 @@ zone_edges = where(zonemap ne shift(zonemap, 1,0) or zonemap ne shift(zonemap, 0
 
     xpix    = mm.columns
     ypix    = mm.rows
-    centime = (spex.start_time + spex.end_time)/2
+    centime = (spekfits.start_time + spekfits.end_time)/2
     hhmm    = dt_tm_mk(js2jd(0d)+1, centime, format='h$:m$')
 
     skewarr = fltarr(mm.maxrec, mm.nzones)
@@ -100,8 +100,10 @@ zone_edges = where(zonemap ne shift(zonemap, 1,0) or zonemap ne shift(zonemap, 0
     rec = mm.maxrec - 1
         sdi3k_read_netcdf_data, spekfile, image=image, range=[rec, rec]
         image  = image(0)
-        zon    = winds(rec).zonal_wind
-        merid  = winds(rec).meridional_wind
+        if size(winds, /tname) eq 'STRUCT' then begin
+           zon    = winds(rec).zonal_wind
+           merid  = winds(rec).meridional_wind
+        endif
 ;        zon    = winds(rec).zonal_wind*cos(theta) - winds(rec).meridional_wind*sin(theta)
 ;        merid  = winds(rec).zonal_wind*sin(theta) + winds(rec).meridional_wind*cos(theta)
 ;---Setup scaling and a mask for the useful area of the image:
@@ -147,14 +149,16 @@ zone_edges = where(zonemap ne shift(zonemap, 1,0) or zonemap ne shift(zonemap, 0
         tv, [[[red]], [[green]], [[blue]]], true=3
 
 ;-------Draw the wind vectors:
-        pix = min([mm.rows, mm.columns])
-        zx  = zone_centers(*,0)*mm.columns
-        zy  = zone_centers(*,1)*mm.rows
-        x0 = zx - 0.25*pix*zon/scale
-        x1 = zx + 0.25*pix*zon/scale
-        y0 = zy + 0.25*pix*merid/scale
-        y1 = zy - 0.25*pix*merid/scale
-        if plot_options.plot_wind_vectors then arrow, x0, y0,x1, y1, color=culz.yellow, thick=2, hthick=2
+        if size(winds, /tname) eq 'STRUCT' then begin
+           pix = min([mm.rows, mm.columns])
+           zx  = zone_centers(*,0)*mm.columns
+           zy  = zone_centers(*,1)*mm.rows
+           x0 = zx - 0.25*pix*zon/scale
+           x1 = zx + 0.25*pix*zon/scale
+           y0 = zy + 0.25*pix*merid/scale
+           y1 = zy - 0.25*pix*merid/scale
+           if plot_options.plot_wind_vectors then arrow, x0, y0,x1, y1, color=culz.yellow, thick=2, hthick=2
+        endif
 ;---Plot the spectra:
     for zidx=0,mm.nzones-1 do begin
         xtwk = 0.22/mm.rings
