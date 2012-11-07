@@ -53,6 +53,7 @@ pro sdi3k_auto_flat, mm, wind_offset, $
 		    doing_sodium = 0
 		    doing_red    = 0
 		    doing_green  = 0
+		    lamda = string(mm.wavelength_nm * 10, f='(i04)')
 		    if abs(mm.wavelength_nm - 589.0) lt 5. then begin
 		       lamda = '5890'
 		       doing_sodium = 1

@@ -75,7 +75,7 @@ zone_edges = where(zonemap ne shift(zonemap, 1,0) or zonemap ne shift(zonemap, 0
 
     xpix    = mm.columns
     ypix    = mm.rows
-    centime = (winds.start_time + winds.end_time)/2
+    centime = (spex.start_time + spex.end_time)/2
     hhmm    = dt_tm_mk(js2jd(0d)+1, centime, format='h$:m$')
 
     skewarr = fltarr(mm.maxrec, mm.nzones)
