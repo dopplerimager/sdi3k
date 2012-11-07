@@ -208,7 +208,7 @@ zone_edges = where(zonemap ne shift(zonemap, 1,0) or zonemap ne shift(zonemap, 0
        xyouts, /normal, .02, .50, '!5W!3', charsize = 3, charthick = 3, color=culz.white, align=0.5
        xyouts, /normal, .98, .50, '!5E!3', charsize = 3, charthick = 3, color=culz.white, align=0.5
 ;-------Add the velocity scale marker if needed:
-        if plot_options.plot_wind_vectors then begin
+        if plot_options.plot_wind_vectors and size(winds, /tname) eq 'STRUCT' then begin
            x0 = xpix - 30 - 0.125*pix
            x1 = xpix - 30
            y0 = 70
