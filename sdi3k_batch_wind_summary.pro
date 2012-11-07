@@ -75,7 +75,6 @@ vscale = [-167, 167]
     w     = fltarr(2)
     aplab    = strcompress(string(ap(0), format='(i8)'), /remove_all)
     f107lab  = strcompress(string(f107,  format='(i8)'), /remove_all)
-    hwm_lab  = 'NRL-HWM93 model at ' + 'Ap=' + aplab + ', F10.7=' + f107lab
 
     for idz=-1,1  do begin
         for j=0,nhwm-1 do begin
@@ -90,11 +89,12 @@ vscale = [-167, 167]
             w      = fltarr(2)
 
             if not keyword_set(hwm07) then begin
+            	hwm_version = 'NRL-HWM93 model
             	result = call_external(hwm_dll,'nrlhwm93', yyddd, ss, zv, lat, lon, lst, f107a, f107, ap, flags,w)
             	hwm_vals(1, idz+1, j) = w(1)*cos(magrot) - w(0)*sin(magrot)
             	hwm_vals(0, idz+1, j) = w(0)*cos(magrot) + w(1)*sin(magrot)
             endif else begin
-
+				hwm_version = 'NRL-HWM07 model
 				doy = ymd2dn(yy, mmm, dd)
 
 				result = hwm(year = yy, $
@@ -115,6 +115,8 @@ vscale = [-167, 167]
 
          endfor
      endfor
+
+	hwm_lab  = hwm_version + ' at ' + 'Ap=' + aplab + ', F10.7=' + f107lab
 
 ;--Now start plotting:
 while !d.window gt 0 do wdelete, !d.window
