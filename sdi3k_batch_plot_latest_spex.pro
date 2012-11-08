@@ -16,6 +16,14 @@ mm.columns = mm.columns*fact
 zonemap    = rebin(zonemap, mm.columns, mm.rows, /sample)
 zone_edges = where(zonemap ne shift(zonemap, 1,0) or zonemap ne shift(zonemap, 0, 1))
 
+plot_options = {plot_images: 1, $
+				plot_temperature: 0, $
+				plot_los_wind: 1, $
+				plot_insprofs: 0, $
+				plot_wind_vectors:1, $
+				auto_image_lo: 0., $
+				auto_image_hi: 0.}
+
 ;---Determine the wavelength:
     doing_sodium = 0
     doing_red    = 0
@@ -25,6 +33,9 @@ zone_edges = where(zonemap ne shift(zonemap, 1,0) or zonemap ne shift(zonemap, 0
     if abs(mm.wavelength_nm - 589.0) lt 5. then begin
        lamda = '5890'
        doing_sodium = 1
+       plot_options.plot_temperature = 0
+       plot_options.plot_los_wind = 0
+       plot_options.plot_wind_vectors = 0
     endif
     if abs(mm.wavelength_nm - 557.7) lt 5. then begin
        lamda = '5577'
@@ -34,6 +45,18 @@ zone_edges = where(zonemap ne shift(zonemap, 1,0) or zonemap ne shift(zonemap, 0
     if abs(mm.wavelength_nm - 630.03) lt 5. then begin
        lamda = '6300'
        doing_red = 1
+    endif
+    if abs(mm.wavelength_nm - 843) lt 5. then begin
+       lamda = '8430'
+       plot_options.plot_temperature = 0
+       plot_options.plot_los_wind = 0
+       plot_options.plot_wind_vectors = 0
+    endif
+    if abs(mm.wavelength_nm - 732) lt 5. then begin
+       lamda = '7320'
+       plot_options.plot_temperature = 0
+       plot_options.plot_los_wind = 0
+       plot_options.plot_wind_vectors = 0
     endif
 
     tprarr = spekfits.temperature
@@ -50,13 +73,12 @@ zone_edges = where(zonemap ne shift(zonemap, 1,0) or zonemap ne shift(zonemap, 0
     lodx = (hidx - 10) > 0
     sdi3k_zenav_peakpos, spex(lodx:hidx), mm, cpos, widths=widths
 
-    plot_options = {plot_images: 1, plot_temperature: 0, plot_los_wind: 1, plot_insprofs: 0, plot_wind_vectors:1, auto_image_lo: 0., auto_image_hi: 0.}
     if plot_options.plot_los_wind then plot_options.plot_temperature = 0
     if doing_sodium then plot_options.plot_wind_vectors = 0
     tpr  = spekfits.temperature
     nt   = n_elements(tpr)
     tord = sort(tpr)
-    tlo  = 50*fix(tpr(tord(0.03*nt))/50.) -50
+    tlo  = 50*fix(tpr(tord(0.03*nt))/50.) - 50
     thi  = 50*fix(tpr(tord(0.97*nt))/50.) + 50
 
     while (thi - tlo) lt trange do begin
@@ -138,7 +160,9 @@ zone_edges = where(zonemap ne shift(zonemap, 1,0) or zonemap ne shift(zonemap, 0
         if not(plot_options.plot_images)      then green = green*0.0001
 
         erase
+        device, decomposed = 1
         tv, [[[red]], [[green]], [[blue]]], 0, (ypix - xpix)/2 - (ypix/2 - mm.y_center_pix) , true=3
+        device, decomposed = 0
         screen = tvrd(/true)
         red    = reform(screen(0,*,*))
         green  = reform(screen(1,*,*))
@@ -146,7 +170,9 @@ zone_edges = where(zonemap ne shift(zonemap, 1,0) or zonemap ne shift(zonemap, 0
         red(zone_edges)  = 0
         green(zone_edges) = 0
         blue(zone_edges) = 0
+        device, decomposed = 1
         tv, [[[red]], [[green]], [[blue]]], true=3
+        device, decomposed = 0
 
 ;-------Draw the wind vectors:
         if size(winds, /tname) eq 'STRUCT' then begin

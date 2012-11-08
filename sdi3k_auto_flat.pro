@@ -114,6 +114,7 @@ pro sdi3k_auto_flat, mm, wind_offset, $
 			if size(flatarr, /type) eq 0 then return
 
 		;-----Only keep the flat field files flagged as being valid during the time of the current data:
+		wind_offset[*] = 0.0
 		centime = (mm.start_time + mm.end_time)/2
 		goods = where(centime gt (flatarr.js_valid(0)) and centime lt  (flatarr.js_valid(1)), ng)
 		if ng le 0 then begin
