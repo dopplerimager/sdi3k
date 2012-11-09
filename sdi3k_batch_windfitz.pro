@@ -85,15 +85,17 @@ if mmsky.start_time eq mmsky.end_time then return
 ;---Replace any spectral fits with really high chi-squareds with nearest good record:
     chilim = 1.9
     if abs(mmsky.wavelength_nm - 557.7) lt 1. then chilim = 5.
-    goods = where(chiarr lt chilim and snrarr gt 70., ngg)
+    posarr = spekfits.velocity
+    goods = where(spekfits.chi_squared lt chilim and spekfits.signal2noise gt 70., ngg)
     if ngg le 0 then return
-    bads  = where(chiarr ge chilim or  snrarr le 70., nn)
+    bads  = where(spekfits.chi_squared ge chilim or spekfits.signal2noise le 70., nn)
     for j=0, nn-1 do begin
         distz = abs(bads(j) - goods)
         best  = where(distz eq min(distz))
         best  = best(0)
-        spekfits(bads(j)) = spekfits(goods(best))
+        posarr(bads(j)) = posarr(goods(best))
     endfor
+    spekfits.velocity = posarr
 
 ;     spekfits.velocity = (spekfits.velocity + 2.25*mmsky.scan_channels) mod mmsky.scan_channels
 
