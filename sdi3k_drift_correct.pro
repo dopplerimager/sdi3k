@@ -71,6 +71,8 @@ pro sdi3k_drift_correct, spekfits, mmsky, force=fdc, data_based=dbase, insfile=i
 data_corr:
 
 ;stop
+if n_elements(spekfits) lt 10 then goto, zero_mean
+
     deltol = 25.0
 
     chilim = 1.9
@@ -131,7 +133,6 @@ jump_jumpfix:
 
 ;---Actually, we'll only use peak positions derived from the inner rings:
     velarr = spekfits.velocity
-    if n_elements(spekfits) lt 10 then goto, zero_mean
     velarr = median(velarr, 5)
     inner_rings = where(ridx gt 0 and ridx le 3)
 ;    aparr = (7*total(spekfits.velocity(inner_rings), 1)/n_elements(inner_rings) + 1.*spekfits.velocity(0))/8.
