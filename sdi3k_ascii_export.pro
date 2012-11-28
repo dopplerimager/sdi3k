@@ -22,27 +22,32 @@ end
 
 ;-----------------------------------------------------------------------------------
 ;
-;  Main program starts here:
+;  Main entry point starts here:
 
-drive = get_drive()
-flis = drive + '\Users\sdi3000\Data\poker\PKR 2010_011_Poker_630nm_Red_Sky_Date_01_11.nc'
-;flis = 'D:\users\SDI3000\Data\Poker\PKR 2010_034_Poker_630nm_Red_Sky_Date_02_03.nc'
-;goto, skip_filesel
+pro sdi3k_ascii_export, setup = setup, files = flis, outpath = outpath, skip_existing=skip_existing
 
-    fpath = '\users\SDI3000\Data'
-    xx = alldisk_findfiles(fpath)
-    flis = dialog_pickfile(filter="*.nc", path=xx.(0), title='Select SDI netCDF data files:', /multiple)
+       stp = {export_allsky: 1, $
+              export_skymaps: 1, $
+              export_spectra: 0, $
+              apply_smoothing: 1, $
+              time_smoothing: 1.1, $
+              space_smoothing: 0.09}
+    if not(keyword_set(setup)) then begin
+        setup = stp
+        obj_edt, setup
+    endif else if size(setup, /tname) ne 'STRUCT' then setup = stp
 
-skip_filesel:
-    setup = {export_allsky: 1, $
-             export_skymaps: 1, $
-             export_spectra: 0, $
-             apply_smoothing: 1, $
-             time_smoothing: 1.1, $
-             space_smoothing: 0.09}
-    obj_edt, setup
+    if not(keyword_set(flis)) then begin
+       drive = get_drive()
+;      flis = drive + '\Users\sdi3000\Data\poker\PKR 2010_011_Poker_630nm_Red_Sky_Date_01_11.nc'
+;      flis = 'D:\users\SDI3000\Data\Poker\PKR 2010_034_Poker_630nm_Red_Sky_Date_02_03.nc'
+;      goto, skip_filesel
+       fpath = '\users\SDI3000\Data'
+       xx = alldisk_findfiles(fpath)
+       flis = dialog_pickfile(filter="*.nc", path=xx.(0), title='Select SDI netCDF data files:', /multiple)
+    endif
+    if not(keyword_set(skip_existing)) then skip_existing = 0
 
-skip_fq:
 ;---Read in the SDI data from a netCDF file. In this case data are returned in the following structures:
 ;   metadata: mm
 ;   level-1 spectral fit results: spekfits
@@ -50,6 +55,12 @@ skip_fq:
 ;   all-sky average wind data: windpars
     for thisfile=0,n_elements(flis)-1 do begin
     ncfile = flis(thisfile)
+
+;---Check if we need to skip because the output file has already been made:
+    fspec   = mc_fileparse(ncfile, /lowercase)
+    if not(keyword_set(outpath)) then outpath = fspec.path
+    outfile = outpath + fspec.name_only + '.txt'
+    if file_test(outfile) and skip_existing then goto, SKIP_FILE
     sdi3k_read_netcdf_data,  ncfile, $
                              metadata=mm, spex=spex, winds=winds, spekfits=spekfits, windpars=windpars, $
                              zone_centers=zone_centers, /preprocess
@@ -73,8 +84,6 @@ skip_fq:
 NO_SMOOTHING:
 
 ;---Now open the output text file:
-    fspec   = mc_fileparse(ncfile, /lowercase)
-    outfile = fspec.path + fspec.name_only + '.txt'
     openw, fout, outfile, /get_lun
     scount = 0
 
@@ -291,5 +300,6 @@ NO_SPECTRA:
 ;---Close the text file and end:
     close, fout
     free_lun, fout
+SKIP_FILE:
     endfor
 end

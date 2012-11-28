@@ -49,6 +49,7 @@ pro sdi3k_batch_autoprox, path=local_path, $
                           calfit=calfit, $
                           windfit=windfit, $
                           plotting=plotting, $
+                          ascii_export=ascii_export, $
                           plotstage=plotstage, $
                           plot_folder=plot_folder, $
                           ask_flat=ask_flat, $
@@ -62,6 +63,7 @@ if not(keyword_set(calfit))           then calfit           = 'all' ; options ar
 if not(keyword_set(skyfit))           then skyfit           = 'all'
 if not(keyword_set(windfit))          then windfit          = 'all'
 if not(keyword_set(plotting))         then plotting         = 'all'
+if not(keyword_set(ascii_export))     then ascii_export     = 'all'
 if not(keyword_set(drift_mode))       then drift_mode       = 'data'
 
 calfit   = strupcase(calfit)
@@ -130,6 +132,28 @@ for j=0,n_elements(skylis)-1 do begin
        endif
        if strupcase(strcompress(plotting, /remove)) ne 'NONE' then begin
           sdi3k_batch_plotz, skylis(j).name, skip_existing=(strupcase(strcompress(plotting, /remove)) eq 'NEW'), stage=plotstage, plot_folder=plot_folder, drift_mode=drift_mode, xy_only=xy_only
+       endif
+       if strupcase(strcompress(ascii_export, /remove)) ne 'NONE' then begin
+          plot_dir = 'c:\inetpub\wwwroot\conde\sdiplots\'
+          lamstring = strcompress(string(fix(10*mm.wavelength_nm)), /remove_all)
+          year      = strcompress(string(fix(mm.year)),             /remove_all)
+          scode     = strcompress(mm.site_code, /remove_all)
+          if strupcase(scode) eq 'PF' then scode = 'PKR'
+          md_err = 0
+          catch, md_err
+          if md_err ne 0 then goto, keep_going
+          folder = plot_dir + year + '_' + scode + '_' + lamstring + '\' + 'ASCII_Data' + '\'
+          if !version.release ne '5.2' then file_mkdir, folder else spawn, 'mkdir ' + folder
+keep_going:
+
+          stp = {export_allsky: 1, $
+                 export_skymaps: 1, $
+                 export_spectra: 0, $
+                 apply_smoothing: 1, $
+                 time_smoothing: 1.1, $
+                 space_smoothing: 0.09}
+          sdi3k_ascii_export, setup = stp, files = skylis(j).name, outpath = folder, $
+                              skip_existing=(strupcase(strcompress(ascii_export, /remove)) eq 'NEW')
        endif
 endfor
 end

@@ -72,6 +72,7 @@ if mmsky.start_time eq mmsky.end_time then return
     if doing_green then sdi3k_get_wind_offset, getenv('SDI_GREEN_ZERO_VELOCITY_FILE'), wind_offset, mmsky
     if doing_red   then sdi3k_get_wind_offset, getenv('SDI_RED_ZERO_VELOCITY_FILE'),   wind_offset, mmsky
     if doing_oh    then sdi3k_get_wind_offset, getenv('SDI_OH_ZERO_VELOCITY_FILE'),    wind_offset, mmsky
+
     snrarr = fltarr(n_elements(spekfits))
     chiarr = fltarr(n_elements(spekfits))
     for j=0,n_elements(spekfits) - 1 do begin

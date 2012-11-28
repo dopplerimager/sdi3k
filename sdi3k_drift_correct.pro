@@ -131,6 +131,8 @@ jump_jumpfix:
 
 ;---Actually, we'll only use peak positions derived from the inner rings:
     velarr = spekfits.velocity
+
+    if n_elements(spekfits) lt 10 then goto, zero_mean
     velarr = median(velarr, 5)
     inner_rings = where(ridx gt 0 and ridx le 3)
 ;    aparr = (7*total(spekfits.velocity(inner_rings), 1)/n_elements(inner_rings) + 1.*spekfits.velocity(0))/8.
