@@ -1,6 +1,7 @@
 ; Example calls:  sdi3k_batch_autoprox, path='d:\users\sdi2000\data\2000_fall\', filter=['*.pf', '*.nc'], calfit='none', skyfit='new', windfit='all', /choose, lookback_seconds=30*86400L
 ;                 sdi3k_batch_autoprox, path='d:\users\sdi3000\data\spectra', filter=['*.pf', '*.nc', '*.sky', '*.las'], calfit='none', skyfit='none', windfit='all', plotting='all', lookback_seconds=18L*86400L, /choose
 ;                 sdi3k_batch_autoprox, path='D:\users\SDI3000\Data\HAARP', filter=['*.pf', '*843nm*.nc', '*.sky', '*.las'], calfit='none', skyfit='none', windfit='all', plotting='all', lookback_seconds=18L*86400L, /choose, /ask
+;                 sdi3k_batch_autoprox, path='F:\SDIData\Poker\', filter=['pkr_2012*_63*.nc'], calfit='none', skyfit='none', windfit='none', plotting='none', /choose, lookback_seconds=30*86400L
 
 pro sdi3k_get_flat_spec, local_path, color
       color = strupcase(color)
@@ -131,7 +132,30 @@ for j=0,n_elements(skylis)-1 do begin
        if (windfit eq 'ALL') or (skylis(j).metadata.windfit_status ne 'Winds Fitted') then sdi3k_batch_windfitz, skylis(j).name, drift_mode=drift_mode
        endif
        if strupcase(strcompress(plotting, /remove)) ne 'NONE' then begin
-          sdi3k_batch_plotz, skylis(j).name, skip_existing=(strupcase(strcompress(plotting, /remove)) eq 'NEW'), stage=plotstage, plot_folder=plot_folder, drift_mode=drift_mode, xy_only=xy_only
+          sdi3k_batch_plotz, skylis(j).name, skip_existing=(strupcase(strcompress(plotting, /remove)) eq 'NEW'), stage=plotstage, plot_folder=plot_folder, drift_mode=drift_mode, xy_only=xy_only, root_dir='C:\Users\sdi\SDIPlots\', /msis2000, /hwm07
+       endif
+       if strupcase(strcompress(ascii_export, /remove)) ne 'NONE' then begin
+          plot_dir = 'C:\Users\sdi\SDIPlots\'
+          lamstring = strcompress(string(fix(10*mm.wavelength_nm)), /remove_all)
+          year      = strcompress(string(fix(mm.year)),             /remove_all)
+          scode     = strcompress(mm.site_code, /remove_all)
+          if strupcase(scode) eq 'PF' then scode = 'PKR'
+          md_err = 0
+          catch, md_err
+          if md_err ne 0 then goto, keep_going
+          folder = plot_dir + year + '_' + scode + '_' + lamstring + '\' + 'ASCII_Data' + '\'
+          if !version.release ne '5.2' then file_mkdir, folder else spawn, 'mkdir ' + folder
+keep_going:
+          catch, /cancel
+          stp = {export_allsky: 1, $
+                 export_skymaps: 1, $
+                 export_spectra: 0, $
+                 apply_smoothing: 1, $
+                 time_smoothing: 1.1, $
+                 space_smoothing: 0.09}
+
+          sdi3k_ascii_export, setup = stp, files = skylis(j).name, outpath = folder, $
+                              skip_existing=(strupcase(strcompress(ascii_export, /remove)) eq 'NEW')
        endif
        if strupcase(strcompress(ascii_export, /remove)) ne 'NONE' then begin
           plot_dir = 'c:\inetpub\wwwroot\conde\sdiplots\'

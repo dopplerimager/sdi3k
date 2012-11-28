@@ -71,6 +71,8 @@ pro sdi3k_drift_correct, spekfits, mmsky, force=fdc, data_based=dbase, insfile=i
 data_corr:
 
 ;stop
+if n_elements(spekfits) lt 10 then goto, zero_mean
+
     deltol = 25.0
 
     chilim = 1.9

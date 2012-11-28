@@ -5,7 +5,7 @@ pro sdi3k_texport_printarr, fout, headline, array, format, noheader=noheader
     j = 0
     while j lt n_elements(array) do begin
         subarr = array(j: (j + 14) < (n_elements(array) - 1))
-        printf, fout, string(subarr, format='(' + string(n_elements(subarr)) + format + ')' ), format='(a)'
+        printf, fout, string(subarr, format='(' + string(n_elements(subarr)) + '(' + format + ',1x)' + ')' ), format='(a)'
         j = j + 15
     endwhile
 end
@@ -45,6 +45,7 @@ pro sdi3k_ascii_export, setup = setup, files = flis, outpath = outpath, skip_exi
        fpath = '\users\SDI3000\Data'
        xx = alldisk_findfiles(fpath)
        flis = dialog_pickfile(filter="*.nc", path=xx.(0), title='Select SDI netCDF data files:', /multiple)
+
     endif
     if not(keyword_set(skip_existing)) then skip_existing = 0
 
@@ -64,6 +65,12 @@ pro sdi3k_ascii_export, setup = setup, files = flis, outpath = outpath, skip_exi
     sdi3k_read_netcdf_data,  ncfile, $
                              metadata=mm, spex=spex, winds=winds, spekfits=spekfits, windpars=windpars, $
                              zone_centers=zone_centers, /preprocess
+
+    if size(mm, /tname) ne 'STRUCT' then return
+    if size(spex, /tname) ne 'STRUCT' then return
+    if size(spekfits, /tname) ne 'STRUCT' then return
+    if size(winds, /tname) ne 'STRUCT' then return
+    if size(windpars, /tname) ne 'STRUCT' then return
 
 ;---Optional smoothing for skymap data:
     if not(setup.apply_smoothing) then goto, NO_SMOOTHING
@@ -167,7 +174,7 @@ NO_ALLSKY:
     if not(setup.export_skymaps) then goto, NO_SKYMAPS
 
     sdi3k_texport_section, fout, scount, 'TEMP_SKYMAP', 'Temperatures in K at each viewing location'
-    for j=1, n_elements(spekfits) - 1 do begin
+    for j=0, n_elements(spekfits) - 1 do begin
         printf, fout, 'Times ', dt_tm_mk(js2jd(0d)+1, winds(j).start_time, format='h$:m$:s$'), $
                       ' to ',    dt_tm_mk(js2jd(0d)+1, winds(j).end_time,   format='h$:m$:s$'), $
                       format='(a, a8, a, a8)'
@@ -177,7 +184,7 @@ NO_ALLSKY:
     printf, fout, ''
 
     sdi3k_texport_section, fout, scount, 'SIGMA_TEMP_SKYMAP', 'Temperature uncertainty in K at each viewing location'
-    for j=1, n_elements(spekfits) - 1 do begin
+    for j=0, n_elements(spekfits) - 1 do begin
         printf, fout, 'Times ', dt_tm_mk(js2jd(0d)+1, winds(j).start_time, format='h$:m$:s$'), $
                       ' to ',    dt_tm_mk(js2jd(0d)+1, winds(j).end_time,   format='h$:m$:s$'), $
                       format='(a, a8, a, a8)'
@@ -187,7 +194,7 @@ NO_ALLSKY:
     printf, fout, ''
 
     sdi3k_texport_section, fout, scount, 'LOS_WIND_SKYMAP', 'Line-of_sight winds in m/s at each viewing location'
-    for j=1, n_elements(spekfits) - 1 do begin
+    for j=0, n_elements(spekfits) - 1 do begin
         printf, fout, 'Times ', dt_tm_mk(js2jd(0d)+1, winds(j).start_time, format='h$:m$:s$'), $
                       ' to ',    dt_tm_mk(js2jd(0d)+1, winds(j).end_time,   format='h$:m$:s$'), $
                       format='(a, a8, a, a8)'
@@ -197,7 +204,7 @@ NO_ALLSKY:
     printf, fout, ''
 
 sdi3k_texport_section, fout, scount, 'SIGMA_LOS_WIND_SKYMAP', 'Line-of_sight wind uncertainty in m/s at each viewing location'
-    for j=1, n_elements(spekfits) - 1 do begin
+    for j=0, n_elements(spekfits) - 1 do begin
         printf, fout, 'Times ', dt_tm_mk(js2jd(0d)+1, winds(j).start_time, format='h$:m$:s$'), $
                       ' to ',    dt_tm_mk(js2jd(0d)+1, winds(j).end_time,   format='h$:m$:s$'), $
                       format='(a, a8, a, a8)'
@@ -209,7 +216,7 @@ sdi3k_texport_section, fout, scount, 'SIGMA_LOS_WIND_SKYMAP', 'Line-of_sight win
 
     brg = mm.oval_angle
     sdi3k_texport_section, fout, scount, 'GEO_ZONAL_WIND_SKYMAP', 'Zonal winds in m/s at each viewing location, aligned GEOGRAPHICALLY'
-    for j=1, n_elements(spekfits) - 1 do begin
+    for j=0, n_elements(spekfits) - 1 do begin
         printf, fout, 'Times ', dt_tm_mk(js2jd(0d)+1, winds(j).start_time, format='h$:m$:s$'), $
                       ' to ',    dt_tm_mk(js2jd(0d)+1, winds(j).end_time,   format='h$:m$:s$'), $
                       format='(a, a8, a, a8)'
@@ -219,7 +226,7 @@ sdi3k_texport_section, fout, scount, 'SIGMA_LOS_WIND_SKYMAP', 'Line-of_sight win
     printf, fout, ''
 
     sdi3k_texport_section, fout, scount, 'GEO_MERID_WIND_SKYMAP', 'Meridional winds in m/s at each viewing location, aligned GEOGRAPHICALLY'
-    for j=1, n_elements(spekfits) - 1 do begin
+    for j=0, n_elements(spekfits) - 1 do begin
         printf, fout, 'Times ', dt_tm_mk(js2jd(0d)+1, winds(j).start_time, format='h$:m$:s$'), $
                       ' to ',    dt_tm_mk(js2jd(0d)+1, winds(j).end_time,   format='h$:m$:s$'), $
                       format='(a, a8, a, a8)'
@@ -229,7 +236,7 @@ sdi3k_texport_section, fout, scount, 'SIGMA_LOS_WIND_SKYMAP', 'Line-of_sight win
     printf, fout, ''
 
     sdi3k_texport_section, fout, scount, 'MAG_ZONAL_WIND_SKYMAP', 'Zonal winds in m/s at each viewing location, aligned GEOMAGNETICALLY'
-    for j=1, n_elements(spekfits) - 1 do begin
+    for j=0, n_elements(spekfits) - 1 do begin
         printf, fout, 'Times ', dt_tm_mk(js2jd(0d)+1, winds(j).start_time, format='h$:m$:s$'), $
                       ' to ',    dt_tm_mk(js2jd(0d)+1, winds(j).end_time,   format='h$:m$:s$'), $
                       format='(a, a8, a, a8)'
@@ -239,7 +246,7 @@ sdi3k_texport_section, fout, scount, 'SIGMA_LOS_WIND_SKYMAP', 'Line-of_sight win
     printf, fout, ''
 
     sdi3k_texport_section, fout, scount, 'MAG_MERID_WIND_SKYMAP', 'Meridional winds in m/s at each viewing location, aligned GEOMAGNETICALLY'
-    for j=1, n_elements(spekfits) - 1 do begin
+    for j=0, n_elements(spekfits) - 1 do begin
         printf, fout, 'Times ', dt_tm_mk(js2jd(0d)+1, winds(j).start_time, format='h$:m$:s$'), $
                       ' to ',    dt_tm_mk(js2jd(0d)+1, winds(j).end_time,   format='h$:m$:s$'), $
                       format='(a, a8, a, a8)'
@@ -249,7 +256,7 @@ sdi3k_texport_section, fout, scount, 'SIGMA_LOS_WIND_SKYMAP', 'Line-of_sight win
     printf, fout, ''
 
     sdi3k_texport_section, fout, scount, 'INTENSITY_SKYMAP', 'Intensity in arbitrary units at each viewing location'
-    for j=1, n_elements(spekfits) - 1 do begin
+    for j=0, n_elements(spekfits) - 1 do begin
         printf, fout, 'Times ', dt_tm_mk(js2jd(0d)+1, spekfits(j).start_time, format='h$:m$:s$'), $
                       ' to ',    dt_tm_mk(js2jd(0d)+1, spekfits(j).end_time,   format='h$:m$:s$'), $
                       format='(a, a8, a, a8)'
@@ -259,7 +266,7 @@ sdi3k_texport_section, fout, scount, 'SIGMA_LOS_WIND_SKYMAP', 'Line-of_sight win
     printf, fout, ''
 
     sdi3k_texport_section, fout, scount, 'SNR_SKYMAP', 'Spectral signal-to-noise ratio at each viewing location'
-    for j=1, n_elements(spekfits) - 1 do begin
+    for j=0, n_elements(spekfits) - 1 do begin
         printf, fout, 'Times ', dt_tm_mk(js2jd(0d)+1, spekfits(j).start_time, format='h$:m$:s$'), $
                       ' to ',    dt_tm_mk(js2jd(0d)+1, spekfits(j).end_time,   format='h$:m$:s$'), $
                       format='(a, a8, a, a8)'
@@ -269,7 +276,7 @@ sdi3k_texport_section, fout, scount, 'SIGMA_LOS_WIND_SKYMAP', 'Line-of_sight win
     printf, fout, ''
 
     sdi3k_texport_section, fout, scount, 'CHI_SQUARED_SKYMAP', 'Spectral chi-squared ratio at each viewing location'
-    for j=1, n_elements(spekfits) - 1 do begin
+    for j=0, n_elements(spekfits) - 1 do begin
         printf, fout, 'Times ', dt_tm_mk(js2jd(0d)+1, spekfits(j).start_time, format='h$:m$:s$'), $
                       ' to ',    dt_tm_mk(js2jd(0d)+1, spekfits(j).end_time,   format='h$:m$:s$'), $
                       format='(a, a8, a, a8)'
@@ -282,7 +289,7 @@ NO_SKYMAPS:
     if not(setup.export_spectra) then goto, NO_SPECTRA
 ;---Export the individual spectra:
     sdi3k_texport_section, fout, scount, 'SPECTRA', 'Spectra in arbitrary units at each viewing location'
-    for j=1, n_elements(spekfits) - 1 do begin
+    for j=0, n_elements(spekfits) - 1 do begin
         for k=0, n_elements(spex(j).spectra(*,0))-1 do begin
             printf, fout, 'Times ', dt_tm_mk(js2jd(0d)+1, spex(j).start_time, format='h$:m$:s$'), $
                           ' to ',    dt_tm_mk(js2jd(0d)+1, spex(j).end_time,   format='h$:m$:s$'), $

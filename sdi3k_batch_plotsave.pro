@@ -8,6 +8,7 @@ pro sdi3k_batch_plotsave, plot_dir, mm, ptype, test_exist=test_exist, plot_folde
     catch, md_err
     if md_err ne 0 then goto, keep_going
     folder = plot_dir + year + '_' + scode + '_' + lamstring + '\' + ptype + '\'
+    wait, 0.001
     if !version.release ne '5.2' then file_mkdir, folder else spawn, 'mkdir ' + folder
 keep_going:
     if not(keyword_set(doystring)) then doystring = string(mm.start_day_ut, format='(i3.3)')
