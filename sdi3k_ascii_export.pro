@@ -38,11 +38,11 @@ pro sdi3k_ascii_export, setup = setup, files = flis, outpath = outpath, skip_exi
     endif else if size(setup, /tname) ne 'STRUCT' then setup = stp
 
     if not(keyword_set(flis)) then begin
-       drive = get_drive()
+;       drive = get_drive()
 ;      flis = drive + '\Users\sdi3000\Data\poker\PKR 2010_011_Poker_630nm_Red_Sky_Date_01_11.nc'
 ;      flis = 'D:\users\SDI3000\Data\Poker\PKR 2010_034_Poker_630nm_Red_Sky_Date_02_03.nc'
 ;      goto, skip_filesel
-       fpath = '\users\SDI3000\Data'
+       fpath = ''
        xx = alldisk_findfiles(fpath)
        flis = dialog_pickfile(filter="*.nc", path=xx.(0), title='Select SDI netCDF data files:', /multiple)
 
