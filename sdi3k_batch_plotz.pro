@@ -97,16 +97,17 @@ data_based_drift = strupcase(drift_mode) eq 'DATA'
     endfor
 
 ;---Replace any spectral fits with really bad fits with interpolated data:
-    chilim = 1.9
+    chilim = 1.8
     if abs(mm.wavelength_nm - 557.7) lt 1. then chilim = 5.
     posarr = spekfits.velocity
-    bads  = where(spekfits.chi_squared ge chilim or  spekfits.signal2noise le 45., nn)
+    bads  = where(spekfits.chi_squared ge chilim or  spekfits.signal2noise le 200., nn)
     if nn gt 0 then begin
        setweight = 0.*posarr + 1.
        setweight(bads) = 0.
        smarr = posarr
        sdi3k_spacesmooth_fits, smarr, 0.10, mm, zone_centers, setweight=setweight
-       sdi3k_timesmooth_fits,  smarr, 1.50, mm, setweight=setweight
+       sdi3k_timesmooth_fits,  smarr, 2.50, mm, setweight=setweight
+       bads  = where(spekfits.chi_squared ge chilim or  spekfits.signal2noise le 200., nn)
        posarr(bads) = smarr(bads)
        spekfits.velocity = posarr
     endif
