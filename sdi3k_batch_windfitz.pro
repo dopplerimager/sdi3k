@@ -72,7 +72,6 @@ if mmsky.start_time eq mmsky.end_time then return
     if doing_green then sdi3k_get_wind_offset, getenv('SDI_GREEN_ZERO_VELOCITY_FILE'), wind_offset, mmsky
     if doing_red   then sdi3k_get_wind_offset, getenv('SDI_RED_ZERO_VELOCITY_FILE'),   wind_offset, mmsky
     if doing_oh    then sdi3k_get_wind_offset, getenv('SDI_OH_ZERO_VELOCITY_FILE'),    wind_offset, mmsky
-
     snrarr = fltarr(n_elements(spekfits))
     chiarr = fltarr(n_elements(spekfits))
     for j=0,n_elements(spekfits) - 1 do begin
@@ -81,20 +80,20 @@ if mmsky.start_time eq mmsky.end_time then return
         snrarr(j) = mean(spekfits(j).signal2noise)
     endfor
 
-;---Replace any spectral fits with really high chi-squareds with nearest good record:
+;---Replace any spectral fits with really bad fits with interpolated data:
     chilim = 1.9
     if abs(mmsky.wavelength_nm - 557.7) lt 1. then chilim = 5.
     posarr = spekfits.velocity
-    goods = where(spekfits.chi_squared lt chilim and spekfits.signal2noise gt 70., ngg)
-    if ngg le 0 then return
-    bads  = where(spekfits.chi_squared ge chilim or spekfits.signal2noise le 70., nn)
-    for j=0, nn-1 do begin
-        distz = abs(bads(j) - goods)
-        best  = where(distz eq min(distz))
-        best  = best(0)
-        posarr(bads(j)) = posarr(goods(best))
-    endfor
-    spekfits.velocity = posarr
+    bads  = where(spekfits.chi_squared ge chilim or  spekfits.signal2noise le 45., nn)
+    if nn gt 0 then begin
+       setweight = 0.*posarr + 1.
+       setweight(bads) = 0.
+       smarr = posarr
+       sdi3k_spacesmooth_fits, smarr, 0.10, mmsky, zone_centers, setweight=setweight
+       sdi3k_timesmooth_fits,  smarr, 1.50, mmsky, setweight=setweight
+       posarr(bads) = smarr(bads)
+       spekfits.velocity = posarr
+    endif
 
 ;     spekfits.velocity = (spekfits.velocity + 2.25*mmsky.scan_channels) mod mmsky.scan_channels
 

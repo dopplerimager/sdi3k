@@ -9,17 +9,7 @@ end
 
 ;=======================================================================================================
 
-pro sdi3k_batch_plotz, filename, $
-					   xy_only=xy_only, $
-					   stage=stage, $
-					   skip_existing=skip_existing, $
-					   root_dir=root_dir, $
-					   plot_folder=plot_folder, $
-					   timewin=timewin, $
-					   drift_mode=drift_mode, $
-					   msis2000=msis2000, $
-					   hwm07=hwm07
-
+pro sdi3k_batch_plotz, filename, xy_only=xy_only, stage=stage, skip_existing=skip_existing, plot_folder=plot_folder, timewin=timewin, drift_mode=drift_mode
 if not(keyword_set(drift_mode)) then drift_mode = 'data'
 data_based_drift = strupcase(drift_mode) eq 'DATA'
 
@@ -95,26 +85,27 @@ data_based_drift = strupcase(drift_mode) eq 'DATA'
         snrarr(j) = mean(spekfits(j).signal2noise)
     endfor
 
-;---Replace any spectral fits with really high chi-squareds with nearest good record:
+;---Replace any spectral fits with really bad fits with interpolated data:
     chilim = 1.9
     if abs(mm.wavelength_nm - 557.7) lt 1. then chilim = 5.
-    goods = where(chiarr lt chilim and snrarr gt 70., ngg)
-    if ngg le 0 then return
-    bads  = where(chiarr ge chilim or  snrarr le 70., nn)
-    for j=0, nn-1 do begin
-        distz = abs(bads(j) - goods)
-        best  = where(distz eq min(distz))
-        best  = best(0)
-        spekfits(bads(j)) = spekfits(goods(best))
-    endfor
+    posarr = spekfits.velocity
+    bads  = where(spekfits.chi_squared ge chilim or  spekfits.signal2noise le 45., nn)
+    if nn gt 0 then begin
+       setweight = 0.*posarr + 1.
+       setweight(bads) = 0.
+       smarr = posarr
+       sdi3k_spacesmooth_fits, smarr, 0.10, mm, zone_centers, setweight=setweight
+       sdi3k_timesmooth_fits,  smarr, 1.50, mm, setweight=setweight
+       posarr(bads) = smarr(bads)
+       spekfits.velocity = posarr
+    endif
+
 
     sdi3k_remove_radial_residual, mm, spekfits, parname='VELOCITY'
 
 
 ;---Check if plots already exist for this netCDF file. If so, and we're not forcing an update, then return:
-    if not keyword_set(root_dir) then plot_dir = 'c:\inetpub\wwwroot\conde\sdiplots\' $
-    	else plot_dir = root_dir
-
+    plot_dir = 'c:\inetpub\wwwroot\conde\sdiplots\'
     plots_exist = -1
     sdi3k_batch_plotsave, plot_dir, mm, 'Wind_Dial_Plot', test_exist=plots_exist, plot_folder=plot_folder
     if plots_exist and skip_existing then return
@@ -161,10 +152,10 @@ data_based_drift = strupcase(drift_mode) eq 'DATA'
     intord     = sort(britearr)
     britescale = [0., 1.4*britearr(intord(0.97*n_elements(intord)))]
     medtemp = median(spekfits.temperature)
-    medtemp = 100*round(medtemp/100)
+    medtemp = 100*fix(medtemp/100)
     tprscale= [medtemp - 250. > 0, medtemp + 250.]
-    if doing_red    then tprscale = [medtemp - 300. > 0, medtemp + 300.]
-;    if doing_red    then tprscale = [500., 1100.]
+;    if doing_red    then tprscale = [medtemp - 200. > 0, medtemp + 200.]
+    if doing_red    then tprscale = [500., 1100.]
     if doing_green  then tprscale = [medtemp - 250. > 0, medtemp + 250.]
     if doing_sodium then tprscale = [medtemp - 350. > 0, medtemp + 350.]
     if doing_OH     then tprscale = [medtemp - 350. > 0, medtemp + 350.]
@@ -212,7 +203,7 @@ data_based_drift = strupcase(drift_mode) eq 'DATA'
                     menu_configurable: 1, $
                         user_editable: [0,1,2,3]}
     tsplot_settings = {scale: scale, parameter: 'Velocity', zones: 'Zenith', black_bgnd: 1, geometry: geo, records: [0, mm.maxrec-pmarg], msis: msis, hwm: hwm, style: style}
-    sdi3k_tseries_plotter, tlist, tcen, mm, spekfits, tsplot_settings, culz, msis2000=msis2000
+    sdi3k_tseries_plotter, tlist, tcen, mm, spekfits, tsplot_settings, culz
     sdi3k_batch_plotsave, plot_dir, mm, 'Vertical_Wind', plot_folder=plot_folder
 
 ;---Median Temperature Time Series:
@@ -224,14 +215,14 @@ data_based_drift = strupcase(drift_mode) eq 'DATA'
 
     tsplot_settings.zones = 'Median'
     tsplot_settings.parameter = 'Temperature'
-    sdi3k_tseries_plotter, tlist, tcen, mm, spekfits, tsplot_settings, culz, msis2000=msis2000
+    sdi3k_tseries_plotter, tlist, tcen, mm, spekfits, tsplot_settings, culz
     sdi3k_batch_plotsave, plot_dir, mm, 'Median_Temperature', plot_folder=plot_folder
 
 ;---Time Series Plot intensities:
     tsplot_settings.zones = 'All'
     tsplot_settings.parameter = 'INTENSITY'
     tsplot_settings.scale.yrange = britescale
-    sdi3k_tseries_plotter, tlist, tcen, mm, spekfits, tsplot_settings, culz, msis2000=msis2000
+    sdi3k_tseries_plotter, tlist, tcen, mm, spekfits, tsplot_settings, culz
     sdi3k_batch_plotsave, plot_dir, mm, 'Intensity_Vs_Time', plot_folder=plot_folder
 
 ;---Wind Chi-squared: reduced_chi_squared
@@ -239,7 +230,7 @@ data_based_drift = strupcase(drift_mode) eq 'DATA'
     tsplot_settings.parameter = 'reduced_chi_squared'
     tsplot_settings.scale.yrange = [0, 8]
     if n_elements (winds) gt 2 then begin
-       sdi3k_tseries_plotter, tlist, tcen, mm, winds, tsplot_settings, culz, msis2000=msis2000
+       sdi3k_tseries_plotter, tlist, tcen, mm, winds, tsplot_settings, culz
        sdi3k_batch_plotsave, plot_dir, mm, 'Wind_Chi_Squared', plot_folder=plot_folder
     endif
 
@@ -389,10 +380,10 @@ STAGE_WINDMAPS:
     if n_elements(winds) lt 3 then return
 
 ;---Wind Summary Plot:
-    if doing_red    then sdi3k_batch_wind_summary, filename, culz, 300, hwm, drift_mode=drift_mode, hwm07=hwm07
-    if doing_green  then sdi3k_batch_wind_summary, filename, culz, 150, hwm, drift_mode=drift_mode, hwm07=hwm07
-    if doing_sodium then sdi3k_batch_wind_summary, filename, culz, 300, hwm, drift_mode=drift_mode, hwm07=hwm07
-    if doing_OH     then sdi3k_batch_wind_summary, filename, culz, 100, hwm, drift_mode=drift_mode, hwm07=hwm07
+    if doing_red    then sdi3k_batch_wind_summary, filename, culz, 300, hwm, drift_mode=drift_mode
+    if doing_green  then sdi3k_batch_wind_summary, filename, culz, 150, hwm, drift_mode=drift_mode
+    if doing_sodium then sdi3k_batch_wind_summary, filename, culz, 300, hwm, drift_mode=drift_mode
+    if doing_OH     then sdi3k_batch_wind_summary, filename, culz, 100, hwm, drift_mode=drift_mode
     sdi3k_batch_plotsave, plot_dir, mm, 'Wind_Summary', plot_folder=plot_folder
     while !d.window ge 0 do wdelete, !d.window
     window, xsize=xsize, ysize=ysize

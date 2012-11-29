@@ -8,7 +8,7 @@ pro sdi3k_map_zoneseps, sepmap, zone_centers
        endfor
        end
 
-pro sdi3k_spacesmooth_fits, wot, spacewin, mm, zone_centers, progress=progress
+pro sdi3k_spacesmooth_fits, wot, spacewin, mm, zone_centers, progress=progress, setweight=setweight
 
        if keyword_set(progress) then begin
           progressBar = Obj_New("SHOWPROGRESS", message='Percent Completion', title='Spatial Smoothing...')
@@ -16,6 +16,8 @@ pro sdi3k_spacesmooth_fits, wot, spacewin, mm, zone_centers, progress=progress
        endif
        ncrecord = n_elements(wot(0,*))
        if ncrecord lt 2 then return
+
+       if not(keyword_set(setweight)) then setweight = 0.*wot + 1.
 
        nz = mm.nzones
        if spacewin lt 0.01 then return
@@ -27,7 +29,7 @@ pro sdi3k_spacesmooth_fits, wot, spacewin, mm, zone_centers, progress=progress
               for zidx = 0,nz-1 do begin
                   weight = (sepmap(*,zidx)/spacewin)^2
                   weight = weight < 30
-                  weight = exp(-weight)
+                  weight = exp(-weight)*setweight(*,rcd)
                   wot(zidx,rcd) =  total(wot(goods, rcd)*weight(goods)) /$
                                    total(weight(goods))
               endfor
