@@ -29,6 +29,7 @@ pro sdi3k_ascii_export, setup = setup, files = flis, outpath = outpath, skip_exi
        stp = {export_allsky: 1, $
               export_skymaps: 1, $
               export_spectra: 0, $
+              export_wind_gradients: 0, $
               apply_smoothing: 1, $
               time_smoothing: 1.1, $
               space_smoothing: 0.09}
@@ -171,6 +172,25 @@ NO_SMOOTHING:
     printf, fout, ''
 
 NO_ALLSKY:
+
+    if not(setup.export_wind_gradients) then goto, NO_WINDGRADS
+    sdi3k_texport_section, fout, scount, 'WIND_GRADIENTS', 'Wind gradient terms in reciprocal seconds at the station location, multiplied by 1000, and aligned GEOMAGNETICALLY'
+    printf, fout, 'Begin Time', 'End Time', $
+                  'du/dx', 'du/dy', $
+                  'dv/dx', 'dv/dy', $
+                  'Vorticity', 'Divergence', format='(8a15)'
+    for j=0, n_elements(spekfits) - 1 do begin
+        printf, fout, dt_tm_mk(js2jd(0d)+1, winds(j).start_time, format='h$:m$:s$'), $
+                      dt_tm_mk(js2jd(0d)+1, winds(j).end_time,   format='h$:m$:s$'), $
+                      windpars(j).du_dx, windpars(j).du_dy, $
+                      windpars(j).dv_dx, windpars(j).dv_dy, $
+                      windpars(j).vorticity, windpars(j).divergence, $
+                      format='(2a15, 6f15.3)'
+    endfor
+    sdi3k_texport_section, fout, scount, /endsec
+    printf, fout, ''
+
+NO_WINDGRADS:
     if not(setup.export_skymaps) then goto, NO_SKYMAPS
 
     sdi3k_texport_section, fout, scount, 'TEMP_SKYMAP', 'Temperatures in K at each viewing location'
