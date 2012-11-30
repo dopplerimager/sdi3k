@@ -150,6 +150,7 @@ keep_going:
           stp = {export_allsky: 1, $
                  export_skymaps: 1, $
                  export_spectra: 0, $
+                 export_wind_gradients: 0, $
                  apply_smoothing: 1, $
                  time_smoothing: 1.1, $
                  space_smoothing: 0.09}
