@@ -1,6 +1,6 @@
 @sdi_tag
 
-pro sdi3k_auto_flat, mm, wind_offset, $
+pro sdi3k_auto_flat, mm, wind_offset, $  
 					 not_pedantic = not_pedantic, $
 					 use_database = use_database, $
 					 use_path = use_path
