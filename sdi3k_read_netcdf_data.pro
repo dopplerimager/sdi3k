@@ -309,7 +309,8 @@ pro sdi3k_read_metadata, filename, ncid, metadata
           mtr.magnetic_midnight = 10.77
           mtr.rotation_from_oval = 0.
           mtr.magnetic_declination = 21.65
-          mtr.sky_fov_deg = 80.
+          mtr.sky_fov_deg = 80
+          if mtr.start_time ge ymds2js(2012, 12, 7, 0.) then mtr.sky_fov_deg = 73.5
           mtr.gap_mm               = 18.600 ; As per Hovemere delivery report.
        endif
        if strpos(mtr.site, 'Mawson')     ge 0 then begin
