@@ -10,6 +10,8 @@ pro sdi3k_drift_correct, spekfits, mmsky, force=fdc, data_based=dbase, insfile=i
 
     nz   = mmsky.nzones
     nobs = n_elements(spekfits)
+    sdi3k_zone_angles, mmsky, sky_fov, rad, theta, ridx
+    inner_rings = where(ridx gt 0 and ridx le 3)
     if keyword_set(dbase) then goto, data_corr
 
 ;---Find out the drift calibration file name:
@@ -44,11 +46,11 @@ pro sdi3k_drift_correct, spekfits, mmsky, force=fdc, data_based=dbase, insfile=i
           endfor
        endif
 
-       caldmode = 'byzone'
-;       caldmode = 'allsky'
+;       caldmode = 'byzone'
+       caldmode = 'allsky'
        if caldmode eq 'allsky' then begin
           for j=0,ndrft-1 do begin
-              driftarr(j).velocity = median(driftarr(j).velocity(0:42))
+              driftarr(j).velocity = median(driftarr(j).velocity(inner_rings))
           endfor
        endif
 
@@ -70,7 +72,7 @@ pro sdi3k_drift_correct, spekfits, mmsky, force=fdc, data_based=dbase, insfile=i
 ;---Do a data-based drift correction:
 data_corr:
 
-;stop
+
 if n_elements(spekfits) lt 10 then goto, zero_mean
 
     deltol = 25.0
@@ -80,14 +82,18 @@ if n_elements(spekfits) lt 10 then goto, zero_mean
     bads  = where(total(spekfits.chi_squared, 1)/mmsky.nzones ge chilim, nb)
     velfix = spekfits.velocity
     if nb gt 0 then begin
-       goods = where(total(spekfits.chi_squared, 1)/mmsky.nzones lt chilim)
+       goods = where(total(spekfits.chi_squared, 1)/mmsky.nzones lt chilim, ng)
+       if ng gt 2 then begin
        for j=0,mmsky.nzones - 1 do begin
            repair = INTERPOL( spekfits(goods).velocity(j), (spekfits(goods).start_time  + spekfits(goods).end_time)/2., $
                              (spekfits.start_time  + spekfits.end_time)/2.)
            velfix(j, bads) = repair(bads)
        endfor
+       endif
        spekfits.velocity = velfix
     endif
+
+
 ;---This is an updated version of the old Inuvik "etalon jump" fixer:
     for zz=0, mmsky.nzones - 1 do begin
         for j = 1,nobs-1 do begin
@@ -103,10 +109,10 @@ if n_elements(spekfits) lt 10 then goto, zero_mean
 ;       endif
 ;       if abs(aparr(j) - aparr(j-1)) gt deltol then begin
        if abs(spekfits(j).velocity(zz) - spekfits(j-1).velocity(zz)) gt deltol then begin
-;       stop
+
           sgn = spekfits(j).velocity(zz) - spekfits(j-1).velocity(zz)
-          corr = -128.
-          if sgn gt 0 then corr = 128.
+          corr = -64.
+          if sgn gt 0 then corr = 64.
 
 ;          aparr(j:*) = aparr(j:*) - corr
 
@@ -118,8 +124,6 @@ if n_elements(spekfits) lt 10 then goto, zero_mean
 jump_jumpfix:
 
 
-
-    sdi3k_zone_angles, mmsky, sky_fov, rad, theta, ridx
 ;    nobs  = n_elements(spekfits.velocity(0))
 ;    aparr = fltarr(nobs)
 ;    for j=0L,nobs-1 do begin
@@ -135,15 +139,13 @@ jump_jumpfix:
     velarr = spekfits.velocity
 
     if n_elements(spekfits) lt 10 then goto, zero_mean
-    velarr = median(velarr, 5)
-    inner_rings = where(ridx gt 0 and ridx le 3)
+;    velarr = median(velarr, 5)
 ;    aparr = (7*total(spekfits.velocity(inner_rings), 1)/n_elements(inner_rings) + 1.*spekfits.velocity(0))/8.
     aparr = total(velarr(inner_rings, *), 1)/n_elements(inner_rings)
+    aparr = median(aparr, 3)
 ;goto, jump_jumpfix
 
 
-
-;stop
 ;---Check for data at start and end of the night that may be lasers rather than skies. Replace aparr entries that look suspect:
     for j=min([nobs-2,10]),0,-1 do begin
         if median(spekfits(j).temperature) lt 110. then begin
@@ -187,6 +189,7 @@ jump_jumpfix:
           endfor
        endif
     endif
+
 
 
 ;---Force zero-median vertical velocity over the whole night:
