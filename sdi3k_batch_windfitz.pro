@@ -4,6 +4,7 @@ pro sdi3k_batch_windfitz, skyfile, drift_mode=drift_mode
 if not(keyword_set(drift_mode)) then drift_mode = 'data'
 
 sdi3k_read_netcdf_data, skyfile, metadata=mmsky, zonemap=zonemap, zone_centers=zone_centers, zone_edges=zone_edges, spekfits=spekfits
+if size(mmsky, /type) ne 8 then return
 if mmsky.start_time eq mmsky.end_time then return
 ;---Determine the wavelength:
     doing_sodium = 0
@@ -84,15 +85,19 @@ if mmsky.start_time eq mmsky.end_time then return
     chilim = 1.8
     if abs(mmsky.wavelength_nm - 557.7) lt 1. then chilim = 5.
     posarr = spekfits.velocity
-    bads  = where(spekfits.chi_squared ge chilim or  spekfits.signal2noise le 200., nn)
+    bads  = where(spekfits.chi_squared ge chilim or  spekfits.signal2noise le 200. or abs(spekfits.velocity) ge 1200., nn)
     if nn gt 0 then begin
        setweight = 0.*posarr + 1.
        setweight(bads) = 0.
        smarr = posarr
        sdi3k_spacesmooth_fits, smarr, 0.10, mmsky, zone_centers, setweight=setweight
        sdi3k_timesmooth_fits,  smarr, 2.50, mmsky, setweight=setweight
-       bads  = where(spekfits.chi_squared ge chilim or  spekfits.signal2noise le 200., nn)
+;       bads  = where(spekfits.chi_squared ge chilim or  spekfits.signal2noise le 200., nn)
        posarr(bads) = smarr(bads)
+       smdif = posarr - smarr
+       dummy = moment(smdif, sdev=stdv)
+       bads  = where(abs(smdif) gt 4.*stdv, nnbb)
+	   if nnbb gt 0 then posarr[bads] = smarr[bads]
        spekfits.velocity = posarr
     endif
 
