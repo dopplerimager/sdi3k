@@ -62,12 +62,12 @@
 ;==============================================================================
 
 function wnd_func, obsidx, nterms
-    common wndcom, basis, used
+    common wndcom, basis, used, use_mask
     return, reform(basis(obsidx,used))
 end
 
 pro wnd_basis, obs_x, obs_y, obs_azi, obs_zen, nobs, order, vertz
-    common wndcom, basis, used
+    common wndcom, basis, used, use_mask
 
     for i = 0L,nobs-1 do begin
 ;       Do the zeroth order (uniform wind) separately:
@@ -93,12 +93,14 @@ pro wnd_basis, obs_x, obs_y, obs_azi, obs_zen, nobs, order, vertz
 end
 
 pro sdi3k_get_poly_wind, fit_x, fit_y, order, fitpars, result
+    common wndcom, basis,used, use_mask
+         if n_elements(use_mask) eq 0 then use_mask = 1 + intarr(500)
          if n_elements(fitpars) eq 2*total(indgen(order+1)+1) then vertz=0 else vertz=1
 
          result = {zonal: findgen(n_elements(fit_x)), $
                    meridional: findgen(n_elements(fit_x)), $
                    vertical: findgen(n_elements(fit_x))}
-         nterms  = total(indgen(order+1)+1)
+;         nterms  = total(indgen(order+1)+1)
          for n=0,n_elements(fit_x)-1 do begin
              result.zonal(n) = fitpars(0)
              result.meridional(n) = fitpars(1)
@@ -108,22 +110,29 @@ pro sdi3k_get_poly_wind, fit_x, fit_y, order, fitpars, result
                  sidx = fix((vertz+2)*total(indgen(j)+1))
                  for m=j,0,-1 do begin
 ;                     print, j, sidx, m, k
-                     result.zonal(n)      = result.zonal(n)      + fitpars(k)*((fit_x(n))^m)*((fit_y(n))^(j-m))
+                     result.zonal(n)      = result.zonal(n)      + fitpars(k)*((fit_x(n))^m)*((fit_y(n))^(j-m))*use_mask(k)
                      k = k + 1
 ;                     print, j, sidx, m, k
-                     result.meridional(n) = result.meridional(n) + fitpars(k)*((fit_x(n))^m)*((fit_y(n))^(j-m))
+                     result.meridional(n) = result.meridional(n) + fitpars(k)*((fit_x(n))^m)*((fit_y(n))^(j-m))*use_mask(k)
                      k = k + 1
-                     if vertz then result.vertical(n)   = result.vertical(n)   + fitpars(k)*((fit_x(n))^m)*((fit_y(n))^(j-m))
+                     if vertz then result.vertical(n)   = result.vertical(n)   + fitpars(k)*((fit_x(n))^m)*((fit_y(n))^(j-m))*use_mask(k)
                      if vertz then k = k + 1
                  endfor
              endfor
          endfor
 end
 
-pro sdi3k_polywind, los_obs, sigobs,     obs_x,    obs_y,   view_azi, view_zen, order, fitpars, $
+pro sdi3k_polywind, los_obs_in, sigobs_in,     obs_x_in,    obs_y_in,   view_azi_in, view_zen_in, order, fitpars, $
               zonal,   meridional, vertical, sigzon,  sigmer,   sigver,   quality, $
               radians=radz, horizontal_only=hozo, used=use_these
-    common wndcom, basis,used
+    common wndcom, basis,used, use_mask
+
+    los_obs  = double(los_obs_in)
+    sigobs   = double(sigobs_in)
+    obs_x    = double(obs_x_in)
+    obs_y    = double(obs_y_in)
+    view_azi = double(view_azi_in)
+    view_zen = double(view_zen_in)
 
     obs_azi = view_azi
     obs_zen = view_zen
@@ -135,7 +144,11 @@ pro sdi3k_polywind, los_obs, sigobs,     obs_x,    obs_y,   view_azi, view_zen, 
     nterms  = (vertz + 2)*total(indgen(order+1)+1)
     df      = nobs - nterms
     basis   = fltarr(nobs, nterms)
-    if not(keyword_set(use_these)) then used=lindgen(nterms) else used=where(use_these ne 0)
+    if not(keyword_set(use_these)) then begin
+       use_these = 1 + intarr(nterms)
+       used=lindgen(nterms)
+    endif else used=where(use_these ne 0)
+    use_mask = use_these
 
 ;   Generate the basis functions:
     wnd_basis, obs_x, obs_y, obs_azi, obs_zen, nobs, order, vertz
@@ -151,7 +164,7 @@ pro sdi3k_polywind, los_obs, sigobs,     obs_x,    obs_y,   view_azi, view_zen, 
                      weight=fltarr(nobs) + 1./sigobs, $
                      variance=varpars, $
                      singular=numsing, $
-                     yfit=los_fit)
+                     yfit=los_fit, /double)
 
      fitpars(used) = fpars
      varpars(used) = vpars
