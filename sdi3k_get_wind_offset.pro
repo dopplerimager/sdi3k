@@ -8,6 +8,6 @@ pro sdi3k_get_wind_offset, offset_specifier, wind_offset, mm
     endif
     if strupcase(offset_specifier) ne 'AUTO' then return
     sdi3k_auto_flat, mm, wind_offset, $
-    				 use_path = 'c:\rsi\idl\routines\sdi\monitor\timeseries\offsets\'
+    				 use_path = 'c:\rsi\idl\routines\sdi\monitor\timeseries\offsets\', /use_database
 end
 
