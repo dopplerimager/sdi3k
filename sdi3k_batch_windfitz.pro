@@ -1,5 +1,5 @@
 
-pro sdi3k_batch_windfitz, skyfile, drift_mode=drift_mode
+pro sdi3k_batch_windfitz, skyfile, drift_mode=drift_mode, auto_flat=auto_flat
 
 if not(keyword_set(drift_mode)) then drift_mode = 'data'
 
@@ -70,9 +70,13 @@ if mmsky.start_time eq mmsky.end_time then return
        endif
 
     wind_offset = spekfits(0).velocity*0.
-    if doing_green then sdi3k_get_wind_offset, getenv('SDI_GREEN_ZERO_VELOCITY_FILE'), wind_offset, mmsky
-    if doing_red   then sdi3k_get_wind_offset, getenv('SDI_RED_ZERO_VELOCITY_FILE'),   wind_offset, mmsky
-    if doing_oh    then sdi3k_get_wind_offset, getenv('SDI_OH_ZERO_VELOCITY_FILE'),    wind_offset, mmsky
+    if not keyword_set(auto_flat) then begin
+    	if doing_green then sdi3k_get_wind_offset, getenv('SDI_GREEN_ZERO_VELOCITY_FILE'), wind_offset, mmsky
+	    if doing_red   then sdi3k_get_wind_offset, getenv('SDI_RED_ZERO_VELOCITY_FILE'),   wind_offset, mmsky
+    	if doing_oh    then sdi3k_get_wind_offset, getenv('SDI_OH_ZERO_VELOCITY_FILE'),    wind_offset, mmsky
+    endif else begin
+		  sdi3k_auto_flat, mmsky, wind_offset, use_path = 'c:\rsi\idl\routines\sdi\monitor\timeseries\offsets\', /use_database
+	endelse
     snrarr = fltarr(n_elements(spekfits))
     chiarr = fltarr(n_elements(spekfits))
     for j=0,n_elements(spekfits) - 1 do begin
