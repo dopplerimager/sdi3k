@@ -8,7 +8,7 @@ pro sdi3k_auto_flat, mm, wind_offset, $
 	if keyword_set(use_database) then begin
 	;\\ ######## Version utilizing the all-in-one database ##########
 
-		possible = sdi_tag_query(mm.site_code, mmm.wavelength_nm, m.start_time[0])
+		possible = sdi_tag_query(mm.site_code, mm.wavelength_nm, m.start_time[0])
 
 		if size(possible, /type) eq 2 then begin
 
