@@ -3,7 +3,8 @@ pro sdi3k_batch_windfitz, skyfile, drift_mode=drift_mode, auto_flat=auto_flat
 
 if not(keyword_set(drift_mode)) then drift_mode = 'data'
 
-sdi3k_read_netcdf_data, skyfile, metadata=mmsky, zonemap=zonemap, zone_centers=zone_centers, zone_edges=zone_edges, spekfits=spekfits
+sdi3k_read_netcdf_data, skyfile, metadata=mmsky, zonemap=zonemap, zone_centers=zone_centers, $
+						zone_edges=zone_edges, spekfits=spekfits, /close
 
 if size(mmsky, /type) ne 8 then return
 if size(spekfits, /type) ne 8 then return
