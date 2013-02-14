@@ -69,7 +69,7 @@ pro sdi3k_fit_wind, spekfits, mm, dvdx_zero=dvdx_zero, windfit, settings, zone_c
   if mm.latitude lt 0 then hemsign = -1.
 
     sdi3k_zone_angles, mm, sky_fov, rad, theta, ridx
-    theta  = theta + mm.rotation_from_oval*!dtor
+;    theta  = theta - mm.rotation_from_oval*!dtor
     xx     = src_hgt*tan(rad)*sin(theta)
     yy     = src_hgt*tan(rad)*cos(theta)
 

@@ -32,7 +32,7 @@ pro sdi3k_auto_flat, mm, wind_offset, $
 			wind_offset = sum / float(n_elements(exposures[0,*]))
 
 			;\\ If zonemaps are different, we could interpolate spatially here...
-
+			heap_free, possible
 			return
 
 		endelse

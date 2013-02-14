@@ -295,14 +295,23 @@ pro sdi3k_read_metadata, filename, ncid, metadata
           endif
        endif
        if strpos(mtr.site, 'Toolik') ge 0 then begin
+;---------Toolik FOV calibrated by moon position on 13-Feb-2013 by MC:
+;          mtr.oval_angle = 24.0
+;          mtr.magnetic_midnight = 11.28
+;          mtr.rotation_from_oval = 0.
+;          mtr.magnetic_declination = 24.0
+;          mtr.gap_mm                = 20.02
+;          mtr.sky_fov_deg = 72.
+;          mtr.fov_shift_north = 0.
+;          mtr.fov_shift_east  = 0.
           mtr.oval_angle = 24.0
           mtr.magnetic_midnight = 11.28
-          mtr.rotation_from_oval = 0.
+          mtr.rotation_from_oval = 26.
           mtr.magnetic_declination = 24.0
           mtr.gap_mm                = 20.02
-          mtr.sky_fov_deg = 72.
-          mtr.fov_shift_north = 0.
-          mtr.fov_shift_east  = 0.
+          mtr.sky_fov_deg = 75.
+          mtr.fov_shift_north = 9.37
+          mtr.fov_shift_east  = -8.2
        endif
        if strpos(mtr.site, 'HAARP') ge 0 then begin
           mtr.oval_angle = 22.16
